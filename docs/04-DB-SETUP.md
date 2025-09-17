@@ -3,6 +3,10 @@
 > This document delivers the **Task-4** requirements: executable SQL schema, code to create/connect/migrate the database, and clear run instructions.  
 > **Note:** The API still uses file-based stores for `users` and `refreshTokens` from earlier tasks. Postgres is fully provisioned here; the API repositories will be switched to SQL in the next task.
 
+> **Note:** When running with Docker, Postgres listens on localhost:5433 (mapped from container 5432), but when running locally without Docker it usually listens on localhost:5432—set DATABASE_URL accordingly.
+- Running with Docker .env.DATABASE_URL=postgres://postgres:postgres@localhost:5433/hospital_app (port: 5433)
+- Running with Postgres (locally) .env.DATABASE_URL=postgres://postgres:postgres@localhost:5432/hospital_app (port: 5432)
+
 ---
 
 ## Contents
