@@ -82,7 +82,7 @@ CI=false
 >
 > - The **API still uses file-based JSON stores** for users and refresh tokens (from earlier tasks).
 > - **PostgreSQL is fully provisioned** by Task-4 (Docker + SQL migrations) but endpoints are **not** migrated yet.
-> - The next task will switch the repositories to SQL. See: [Task-4: Database Setup & Migrations](./docs/04-DB-SETUP.md).
+> - The next task will switch the repositories to SQL. See: [Task-4: Database Setup & Migrations].
 ```
 
 ### Run It With Docker (recommended)
