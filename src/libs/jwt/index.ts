@@ -1,9 +1,5 @@
 import crypto from "node:crypto";
 
-// CUSTOM JWT LIBRARY (HS256 ONLY):
-// base64url(header).base64url(payload).base64url(HMAC_SHA256(data, secret))
-
-// base64url helpers
 const b64url = (b: Buffer) =>
   b
     .toString("base64")
@@ -15,7 +11,6 @@ const fromB64url = (s: string) => {
   return Buffer.from(s.replace(/-/g, "+").replace(/_/g, "/") + pad, "base64");
 };
 
-//types
 export type SignOptions = {
   expiresIn?: number; // seconds
   notBefore?: number; // seconds from now
@@ -44,7 +39,6 @@ const nowSec = () => Math.floor(Date.now() / 1000);
 const hmac = (data: string, secret: string) =>
   crypto.createHmac("sha256", secret).update(data).digest();
 
-// sign
 export function sign(
   payload: Payload,
   secret: string,
@@ -79,7 +73,6 @@ export function decode(token: string) {
   }
 }
 
-// verify
 export function verify(
   token: string,
   secret: string,
@@ -88,7 +81,6 @@ export function verify(
   const [h, p, s] = token.split(".");
   if (!h || !p || !s) return null;
 
-  // enforce alg/typ
   let header: Header;
   try {
     header = JSON.parse(fromB64url(h).toString("utf8"));
@@ -97,7 +89,6 @@ export function verify(
   }
   if (header.alg !== "HS256" || header.typ !== "JWT") return null;
 
-  // signature
   const expected = hmac(`${h}.${p}`, secret);
   const given = fromB64url(s);
   if (given.length !== expected.length) return null;
@@ -107,7 +98,6 @@ export function verify(
     return null;
   }
 
-  // payload + claims
   let payload: Payload;
   try {
     payload = JSON.parse(fromB64url(p).toString("utf8")) as Payload;

@@ -1,6 +1,11 @@
+import "dotenv/config";
 import { buildApp } from "./app.js";
-import { CONFIG } from "./config.js";
+import { config } from "./config.js";
+import { createDatabase } from "./database/index.js";
 
-buildApp().listen(CONFIG.PORT, () =>
-  console.log(`Auth API on http://localhost:${CONFIG.PORT}`)
+const db = createDatabase({ connectionString: config.DATABASE_URL });
+const app = buildApp(db);
+
+app.listen(config.PORT, () =>
+  console.log(`Auth API on http://localhost:${config.PORT}`)
 );

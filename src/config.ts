@@ -1,17 +1,25 @@
 import "dotenv/config";
+import { z } from "zod";
 
-const { env } = process;
+const Bool = z.preprocess(
+  (v) => (typeof v === "string" ? v === "true" || v === "1" : v),
+  z.boolean().default(false)
+);
 
-const toInt = (v: string | undefined, fallback: number) => {
-  return v !== undefined && !Number.isNaN(Number(v)) ? Number(v) : fallback;
-};
+const Env = z
+  .object({
+    NODE_ENV: z
+      .enum(["development", "test", "staging", "production"])
+      .default("development"),
+    PORT: z.coerce.number().default(3000),
+    CI: Bool,
 
-export const CONFIG = {
-  NODE_ENV: env.NODE_ENV ?? "development",
-  PORT: toInt(env.PORT, 3000),
+    DATABASE_URL: z.string().url(), // postgres://user:pass@host:5432/dbname
 
-  //Auth
-  JWT_SECRET: env.JWT_SECRET ?? "dev-secret-change-me",
-  ACCESS_TTL_SECONDS: toInt(env.ACCESS_TTL_SECONDS, 15 * 60),
-  REFRESH_TTL_DAYS: toInt(env.REFRESH_TTL_DAYS, 30),
-} as const;
+    JWT_SECRET: z.string().min(1).default("dev-secret-change-me"),
+    ACCESS_TTL_SECONDS: z.coerce.number().default(15 * 60),
+    REFRESH_TTL_DAYS: z.coerce.number().default(30),
+  })
+  .readonly();
+
+export const config = Env.parse(process.env);

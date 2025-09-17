@@ -8,7 +8,7 @@ import {
   findValidToken,
   revokeToken,
 } from "../tokens/repo.file.js";
-import { CONFIG } from "../../config.js";
+import { config } from "../../config.js";
 
 export function makeAuthRouter(secret: string) {
   const r = Router();
@@ -49,19 +49,19 @@ export function makeAuthRouter(secret: string) {
         sub: user.id,
         role: user.role,
         iat: now,
-        exp: now + CONFIG.ACCESS_TTL_SECONDS,
+        exp: now + config.ACCESS_TTL_SECONDS,
         iss: "hospital-api",
       },
       secret
     );
     const refreshToken = newOpaqueToken();
-    await insertRefreshToken(user.id, refreshToken, CONFIG.REFRESH_TTL_DAYS);
+    await insertRefreshToken(user.id, refreshToken, config.REFRESH_TTL_DAYS);
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       sameSite: "strict",
       // secure: true, // enable with HTTPS
-      maxAge: CONFIG.REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000,
+      maxAge: config.REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000,
     });
 
     return res.json({ message: `You signed in as ${user.role}`, accessToken });
@@ -79,7 +79,7 @@ export function makeAuthRouter(secret: string) {
     // rotate refresh
     await revokeToken(rt);
     const newRt = newOpaqueToken();
-    await insertRefreshToken(found.userId, newRt, CONFIG.REFRESH_TTL_DAYS);
+    await insertRefreshToken(found.userId, newRt, config.REFRESH_TTL_DAYS);
 
     const user = await findById(found.userId);
     if (!user) return res.status(401).json({ error: "User not found" });
@@ -90,7 +90,7 @@ export function makeAuthRouter(secret: string) {
         sub: user.id,
         role: user.role,
         iat: now,
-        exp: now + CONFIG.ACCESS_TTL_SECONDS,
+        exp: now + config.ACCESS_TTL_SECONDS,
         iss: "hospital-api",
       },
       secret
@@ -100,7 +100,7 @@ export function makeAuthRouter(secret: string) {
       httpOnly: true,
       sameSite: "strict",
       // secure: true,
-      maxAge: CONFIG.REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000,
+      maxAge: config.REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000,
     });
 
     return res.json({ accessToken });
