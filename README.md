@@ -172,6 +172,7 @@ npm run db:migrate
 ├─ docs/
 │  ├─ 02-AUTH.md                   # Detailed Task-2 notes
 │  └─ 03-DB-DIAGRAM.md             # Detailed Task-3 notes
+│  └─ 04-DB-SETUP.md               # Detailed Task-4 notes
 │
 ├─ data/                           # file stores (for early tasks; will be replaced by SQL)
 │  ├─ users.json
