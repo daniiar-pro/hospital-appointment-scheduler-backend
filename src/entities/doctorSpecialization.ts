@@ -9,9 +9,7 @@ export const doctorSpecializationSchema = z.object({
 });
 export type DoctorSpecialization = z.infer<typeof doctorSpecializationSchema>;
 
-export function mapDoctorSpecializationRow(
-  row: DoctorSpecializationRow
-): DoctorSpecialization {
+export function mapDoctorSpecializationRow(row: DoctorSpecializationRow): DoctorSpecialization {
   return {
     id: row.id,
     doctorId: row.doctor_id,
@@ -20,19 +18,15 @@ export function mapDoctorSpecializationRow(
   };
 }
 
-
-// create a doc-spec link
 export const linkDoctorSpecializationDto = z.object({
   doctorId: z.uuid(),
   specializationId: z.uuid(),
 });
 
-// remove a link (by its id)
 export const unlinkDoctorSpecializationDto = z.object({
   id: z.uuid(),
 });
 
-// list a doctor's specializations
 export const listDoctorSpecializationsDto = z.object({
   doctorId: z.uuid(),
 });

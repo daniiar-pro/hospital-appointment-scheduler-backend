@@ -13,13 +13,14 @@ export const slotExceptionSchema = z
   })
   .refine(
     (v) => {
-      if (v.fullDay) return !v.startTime && !v.endTime;
+      if (v.fullDay) {
+        return !v.startTime && !v.endTime;
+      }
       return !!v.startTime && !!v.endTime && v.startTime < v.endTime;
     },
     {
-      message:
-        "For partial blocks, provide startTime<endTime; for fullDay, omit times.",
-    }
+      message: "For partial blocks, provide startTime<endTime; for fullDay, omit times.",
+    },
   );
 
 export type SlotException = z.infer<typeof slotExceptionSchema>;
@@ -46,13 +47,14 @@ export const upsertSlotExceptionDto = z
   })
   .refine(
     (v) => {
-      if (v.fullDay) return !v.startTime && !v.endTime;
+      if (v.fullDay) {
+        return !v.startTime && !v.endTime;
+      }
       return !!v.startTime && !!v.endTime && v.startTime < v.endTime;
     },
     {
-      message:
-        "For partial blocks, provide startTime<endTime; for fullDay, omit times.",
-    }
+      message: "For partial blocks, provide startTime<endTime; for fullDay, omit times.",
+    },
   );
 
 export type UpsertSlotExceptionDto = z.infer<typeof upsertSlotExceptionDto>;

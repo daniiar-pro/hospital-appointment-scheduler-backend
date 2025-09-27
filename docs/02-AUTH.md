@@ -2,152 +2,182 @@
 
 ## Table of Contents
 - [Authentication Flow](#authentication-flow)
-    - [Sign Up](#sign-up)
-    - [Login](#login)
-    - [Profile](#profile)
-    - [Refresh](#refresh)
-    - [Logout](#logout)
+  - [Sign Up](#sign-up)
+  - [Login](#login)
+  - [Profile](#profile)
+  - [Refresh](#refresh)
+  - [Logout](#logout)
 
- ## Authentication Flow
+---
 
- 	1.	Sign Up → password hashed with scrypt → user saved to data/users.json.
-	2.	Login → on valid credentials:
-	   • Access token (JWT), lifetime 15 minutes (configurable), returned in response.
-	   • Refresh token (random 32 bytes), stored hashed server-side and set to the client as an HttpOnly cookie.
-	3.	Protected routes (/profile) → client sends Authorization: Bearer <accessToken>; middleware verifies signature/claims and sets req.user.
-	4.	Refresh → when access token expires, client calls POST /auth/refresh; server validates the cookie, rotates the refresh token, and returns a new access token.
-	5.	Logout → server revokes the refresh token and clears the cookie.
-        • With the current design, any already-issued access token remains usable until it expires.
+## Authentication Flow
 
- ### Sign Up
+1. **Sign Up** → password is hashed (scrypt) → **user saved in Postgres (`users` table)**.  
+   - Role on signup is **always `patient`** (admin can promote later).
+2. **Login** → on valid credentials:
+   - **Access token (JWT)**, ~15 minutes (configurable), returned in the response body.
+   - **Refresh token (opaque, random)**, stored **hashed** in Postgres (`refresh_tokens` table) and issued to the client as an **HttpOnly cookie**.
+3. **Protected routes** (e.g. `/auth/profile`) → client sends `Authorization: Bearer <accessToken>`; middleware verifies signature/claims and sets `req.user`.
+4. **Refresh** → when access token expires, client calls `POST /auth/refresh`; server validates the cookie, **rotates** the refresh token, sets a new cookie, and returns a new access token.
+5. **Logout** → server **revokes** the refresh token and **clears the cookie**.  
+   - Already-issued access tokens can still work until they expire (client should discard them on logout).
 
- POST `http://localhost:3000/auth/signup`
+> **JWT claims:** `{ sub: <userId>, role: "patient"|"doctor"|"admin", iat, exp, iss: "hospital-api" }`
 
- Body:
- ```
- {
-  "email": "daniiar1@gmail.com",
-  "password": "pass1234",
-  "role": "doctor" | "patient"
+---
+
+## Sign Up
+
+**POST** `http://localhost:3000/auth/signup`
+
+**Body**
+```json
+{
+  "username": "Dr House",
+  "email": "dr.house@example.com",
+  "password": "VerySecret123!"
 }
 ```
-#### Signup Responses
-1. Created:`201`
+Note: A role field in the request (if sent) is ignored; every new user starts as patient.
+
+### Responses
+	
+1.	201 Created
 ```
+
 {
   "id": "a98c6cc0-37b7-4f9e-84d8-27c0553f66d2",
-  "email": "daniiar1@gmail.com",
-  "role": "doctor" | "patient"
+  "username": "Dr House",
+  "email": "dr.house@example.com",
+  "role": "patient"
 }
 ```
-2. Conflict:`409`
+
+2. 409 Conflict
+```
+{ "error": "Email already in use" }
+```
+
+3.	400 Bad Request (Zod validation shape)
+
 ```
 {
-  "error": "Email already in use"
+  "message": "Validation failed",
+  "errors": [
+    { "path": "email", "code": "invalid_string", "message": "Invalid email" }
+  ]
 }
 ```
-3. Bad Request: `400`
+
+⸻
+
+# Login
+
+POST `http://localhost:3000/auth/login`
+
+Body
 ```
 {
-  "error": "email, password, role(doctor|patient) required"
+  "email": "dr.house@example.com",
+  "password": "VerySecret123!"
 }
 ```
 
+### Responses
 
- ### Login
+1. 200 OK
 
-POST  `http://localhost:3000/auth/login` 
-
-Body:
- ```
-{
-  "email": "daniiar1@gmail.com",
-  "password": "pass1234"
-}
-```
-#### Login Responses
-
-1. OK: `200`
 ```
 {
-  "message": "You signed in as doctor", //patient
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwM2UzNDNkZC0xMTE4LTRmMGQtODg1NS1kMDc5ZTQwMjQ5OWMiLCJyb2xlIjoiZG9jdG9yIiwiaWF0IjoxNzU2MTIzNjg3LCJleHAiOjE3NTYxMjQ1ODcsImlzcyI6Imhvc3BpdGFsLWFwaSJ9.dS7IgdVI2ITMhtO7r06UtAYR9wM8PEl3aaMQlpQ1yXg"
+  "message": "You signed in as patient",
+  "accessToken": "<JWT>"
 }
 ```
-Also sets an HttpOnly refreshToken cookie.
+Also sets an HttpOnly cookie named refreshToken.
 
-2. Unauthorized: `401`
+2.	401 Unauthorized
+
+```
+{ "error": "Invalid credentials" }
+```
+
+3.	400 Bad Request (Zod validation)
+
 ```
 {
-  "error": "Invalid credentials"
+  "message": "Validation failed",
+  "errors": [
+    { "path": "password", "code": "too_small", "message": "String must contain at least 8 character(s)" }
+  ]
 }
 ```
 
-3. Bad Request `400`
-```
-{
-  "error": "email & password required"
-}
-```
+⸻
 
- ### Profile (confirm if JWT token works as expected)
-GET `http://localhost:3000/profile` 
+# Profile
 
-Headers:
-```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwM2UzNDNkZC0xMTE4LTRmMGQtODg1NS1kMDc5ZTQwMjQ5OWMiLCJyb2xlIjoiZG9jdG9yIiwiaWF0IjoxNzU2MTI0Njk3LCJleHAiOjE3NTYxMjU1OTcsImlzcyI6Imhvc3BpdGFsLWFwaSJ9.KGWSGir1wLsHB0mSSWnQ7JpSvADG0YUW1FKUZfJgWmU
-```
+GET `http://localhost:3000/auth/profile`
 
-#### Profile Responses
+Headers
 
-1. OK:`200`
+Authorization: Bearer <accessToken>
+
+### Responses
+1. 200 OK
+
 ```
 {
   "id": "03e343dd-1118-4f0d-8855-d079e402499c",
-  "role": "doctor"
+  "role": "patient"
 }
 ```
 
-2. Unauthorized: `401`
+2.	401 Unauthorized
+
 ```
-{
-  "error": "Invalid/expired token"
-}
+{ "error": "Invalid/expired token" }
 ```
 
-### Refresh 
-Access tokens are short-lived (~15 minutes).When a protected call returns 401 due to an expired token, obtain a new one:
+⸻
+
+### Refresh
+
+Access tokens are short-lived (~15 minutes). When you receive a 401 due to an expired token, obtain a new one:
 
 POST `http://localhost:3000/auth/refresh`
 
-The browser automatically sends the HttpOnly refreshToken cookie
+The browser/client automatically sends the HttpOnly refreshToken cookie.
 
+### Responses
 
-#### Refresh Responses
-1. OK: `200`
+1.	200 OK
 ```
 { "accessToken": "<new JWT>" }
 ```
 
-2. Unauthorized: `401`
+2. 401 Unauthorized
+
 ```
 { "error": "Missing refresh token" }
-or
-{ error: "Invalid/expired refresh token" }
 ```
+or
+```
+{ "error": "Invalid/expired refresh token" }
+```
+On success, the server rotates the refresh token: a new cookie is set and the old one is revoked server-side.
 
-Note: /auth/refresh is an API call, not a page you navigate to. Typical client logic: on 401 → call refresh → retry original request with the new access token.
+⸻
 
-
-### Logout
+# Logout
 
 POST `http://localhost:3000/auth/logout`
 
 Revokes the current refresh token and clears the cookie.
 
-#### Logout Response:
-  No content: `204`
+### Response
 
-Behavior:
-	
-  • With the current design, an already-issued access token may still work until it expires (client should discard it on logout).
+1.	204 No Content
+
+Note: An already-issued access token may remain valid until it expires. Clients should discard any cached access token upon logout.
+
+

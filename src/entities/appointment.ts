@@ -1,12 +1,7 @@
 import { z } from "zod";
 import type { AppointmentRow } from "../database/types.js";
 
-export const appointmentStatusEnum = z.enum([
-  "pending",
-  "confirmed",
-  "canceled",
-  "completed",
-]);
+export const appointmentStatusEnum = z.enum(["pending", "confirmed", "canceled", "completed"]);
 export type AppointmentStatus = z.infer<typeof appointmentStatusEnum>;
 
 export const appointmentSchema = z.object({

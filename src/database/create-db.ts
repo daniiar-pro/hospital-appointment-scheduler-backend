@@ -1,14 +1,12 @@
 import { Client } from "pg";
-import { config } from "../config";
+import { config } from "../config.js";
 
 function deriveAdminUrlFromAppUrl(appUrlStr: string): {
   adminUrl: string;
   appDbName: string;
 } {
   const u = new URL(appUrlStr);
-  const appDbName = decodeURIComponent(
-    u.pathname.replace(/^\/+/, "") || "postgres"
-  );
+  const appDbName = decodeURIComponent(u.pathname.replace(/^\/+/, "") || "postgres");
   const admin = new URL(u.toString());
   admin.pathname = "/postgres";
   return { adminUrl: admin.toString(), appDbName };

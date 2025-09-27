@@ -2,43 +2,47 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
-  build-and-migrate:
+  lint-and-test:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres -d postgres"
-          --health-interval=5s
-          --health-timeout=2s
-          --health-retries=20
 
     env:
       NODE_ENV: test
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/hospital_app
+      # Dummy URL to satisfy config parsing, no DB started in CI
+      DATABASE_URL: postgres://user:pass@localhost:5432/dummy
+      JWT_SECRET: ci-secret
+      ACCESS_TTL_SECONDS: 900
+      REFRESH_TTL_DAYS: 30
+      CI: true
 
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Use Node 22
+        uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22'
+          cache: 'npm'
 
       - run: npm ci
 
-      - name: Create DB
-        run: npx tsx db/create-db.ts
+      - name: Lint
+        run: npm run lint
 
-      - name: Run migrations
-        run: npx tsx db/migrate.ts
+      # Optional explicit test step (coverage also runs tests)
+      - name: Test
+        run: npm test -- --runInBand
 
-      # Optional: run lints/tests here
-      # - run: npm run lint
-      # - run: npm test
+      - name: Coverage
+        run: npm run coverage
+
+      - name: Upload coverage
+        if: ${{ !env.ACT }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage

@@ -3,14 +3,12 @@ import { z } from "zod";
 
 const Bool = z.preprocess(
   (v) => (typeof v === "string" ? v === "true" || v === "1" : v),
-  z.boolean().default(false)
+  z.boolean().default(false),
 );
 
 const Env = z
   .object({
-    NODE_ENV: z
-      .enum(["development", "test", "staging", "production"])
-      .default("development"),
+    NODE_ENV: z.enum(["development", "test", "staging", "production"]).default("development"),
     PORT: z.coerce.number().default(3000),
     CI: Bool,
 

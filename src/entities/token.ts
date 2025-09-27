@@ -1,7 +1,6 @@
 import { z } from "zod";
 import type { RefreshTokenRow } from "../database/types.js";
 
-/** Internal shape; token_hash is never exposed via API */
 export const refreshTokenRowSchema = z.object({
   id: z.uuid(),
   userId: z.uuid(),

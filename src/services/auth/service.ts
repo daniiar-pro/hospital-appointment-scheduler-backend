@@ -1,11 +1,8 @@
 import type { Database } from "../../database";
-import { userRepository } from "../../repositories/userRepository";
-import {
-  refreshTokenRepository,
-  newOpaqueToken,
-} from "../../repositories/refreshTokensRepository";
-import { hashPassword, verifyPassword } from "../../libs/jwt/password";
-import { sign } from "../../libs/jwt";
+import { userRepository } from "../../repositories/userRepository.js";
+import { refreshTokenRepository, newOpaqueToken } from "../../repositories/refreshTokensRepository.js";
+import { hashPassword, verifyPassword } from "../../libs/jwt/password.js";
+import { sign } from "../../libs/jwt/index.js";
 
 const ACCESS_TTL_SECONDS = 15 * 60;
 const REFRESH_TTL_DAYS = 30;
@@ -33,9 +30,13 @@ export function makeAuthService(db: Database, jwtSecret: string) {
 
     async login(email: string, password: string) {
       const row = await users.findAuthByEmail(email);
-      if (!row) return null;
+      if (!row) {
+        return null;
+      }
       const ok = await verifyPassword(password, row.password_hash);
-      if (!ok) return null;
+      if (!ok) {
+        return null;
+      }
 
       const now = Math.floor(Date.now() / 1000);
       const accessToken = sign(
@@ -46,7 +47,7 @@ export function makeAuthService(db: Database, jwtSecret: string) {
           exp: now + ACCESS_TTL_SECONDS,
           iss: "hospital-api",
         },
-        jwtSecret
+        jwtSecret,
       );
 
       const refreshPlain = newOpaqueToken();
@@ -60,19 +61,22 @@ export function makeAuthService(db: Database, jwtSecret: string) {
           role: row.role,
         },
         accessToken,
-        refreshPlain, // controller will set cookie
+        refreshPlain, 
       };
     },
 
     async refresh(refreshPlain: string) {
       const found = await tokens.findValid(refreshPlain);
-      if (!found) return null;
+      if (!found) {
+        return null;
+      }
 
-      // rotate
       await tokens.revoke(refreshPlain);
 
       const user = await users.findAuthById(found.user_id);
-      if (!user) return null;
+      if (!user) {
+        return null;
+      }
 
       const newRt = newOpaqueToken();
       await tokens.insert(user.id, newRt, REFRESH_TTL_DAYS);
@@ -86,14 +90,16 @@ export function makeAuthService(db: Database, jwtSecret: string) {
           exp: now + ACCESS_TTL_SECONDS,
           iss: "hospital-api",
         },
-        jwtSecret
+        jwtSecret,
       );
 
       return { accessToken, refreshPlain: newRt };
     },
 
     async logout(refreshPlain: string | undefined) {
-      if (refreshPlain) await tokens.revoke(refreshPlain);
+      if (refreshPlain) {
+        await tokens.revoke(refreshPlain);
+      }
     },
   };
 }

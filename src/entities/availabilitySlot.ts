@@ -23,24 +23,17 @@ export const availabilitySlotSchema = z
 
 export type AvailabilitySlot = z.infer<typeof availabilitySlotSchema>;
 
-export function mapAvailabilitySlotRow(
-  row: AvailabilitySlotRow
-): AvailabilitySlot {
+export function mapAvailabilitySlotRow(row: AvailabilitySlotRow): AvailabilitySlot {
   return {
     id: row.id,
     doctorId: row.doctor_id,
     specializationId: row.specialization_id,
-    startTime: row.start_time, // e.g "2025-01-01T10:00:00.000Z"
+    startTime: row.start_time,
     endTime: row.end_time,
     durationMins: row.duration_mins,
     isBooked: row.is_booked,
-    // If you chose `.nullable()` above, pass DB null through:
-    // source: (row.source ?? undefined) as any,
-    source: (row.source ?? undefined) as unknown as z.infer<
-      typeof slotSourceEnum
-    >, // 'generated' | 'manual' | null
-    // If you chose `.optional()` instead, convert null→undefined:
-    // source: (row.source ?? undefined) as unknown as z.infer<typeof slotSourceEnum> | undefined,
+    source: (row.source ?? undefined) as unknown as z.infer<typeof slotSourceEnum>,
+
     createdAt: row.created_at,
   };
 }

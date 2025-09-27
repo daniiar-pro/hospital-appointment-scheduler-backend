@@ -18,10 +18,10 @@ export function mapSpecializationRow(row: SpecializationRow): Specialization {
 
 export const createSpecializationDto = z.object({
   name: z.string().min(2).max(120),
-  description: z.string().max(500).nullish(), // undefined|null|string allowed on input
+  description: z.string().max(500).nullish(), 
 });
 
 export const updateSpecializationDto = z.object({
   name: z.string().min(2).max(120).optional(),
-  description: z.string().max(500).nullish(), // allow clearing with null
+  description: z.string().max(500).nullish(), 
 });

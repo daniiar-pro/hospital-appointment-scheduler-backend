@@ -12,3 +12,5 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_rt_user_hash
 
 CREATE INDEX IF NOT EXISTS idx_rt_user_expires
   ON refresh_tokens(user_id, expires_at);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_slots_doctor_start ON availability_slots(doctor_id, start_time);

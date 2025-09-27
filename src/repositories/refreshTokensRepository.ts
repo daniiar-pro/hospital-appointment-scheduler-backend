@@ -1,4 +1,3 @@
-// src/repositories/refreshTokens.repo.ts
 import crypto from "node:crypto";
 import type { Database } from "../database/index.js";
 import type { RefreshTokenRow } from "../database/types.js";
@@ -7,7 +6,6 @@ function sha256(input: string | Buffer) {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
 
-/** Generate a new opaque refresh token (plaintext for the client/cookie). */
 export function newOpaqueToken(bytes = 32): string {
   return crypto.randomBytes(bytes).toString("base64url");
 }
@@ -19,15 +17,11 @@ export type InsertMeta = {
 
 export function refreshTokenRepository(db: Database) {
   return {
-    /**
-     * Store a refresh token (hashed) for a user. Returns the stored row.
-     * TTL is in days (e.g., 30). Metadata is optional (user agent, ip).
-     */
     async insert(
       userId: string,
       plaintextToken: string,
       ttlDays: number,
-      meta: InsertMeta = {}
+      meta: InsertMeta = {},
     ): Promise<RefreshTokenRow> {
       const tokenHash = sha256(plaintextToken);
 
@@ -48,12 +42,8 @@ export function refreshTokenRepository(db: Database) {
       return rows[0];
     },
 
-    /**
-     * Find a VALID (not revoked, not expired) token by plaintext.
-     * Returns minimal identifying info for follow-up (e.g., rotation).
-     */
     async findValid(
-      plaintextToken: string
+      plaintextToken: string,
     ): Promise<Pick<RefreshTokenRow, "id" | "user_id"> | null> {
       const tokenHash = sha256(plaintextToken);
 
@@ -66,27 +56,21 @@ export function refreshTokenRepository(db: Database) {
         LIMIT 1
       `;
 
-      const { rows } = await db.query<Pick<RefreshTokenRow, "id" | "user_id">>(
-        q,
-        [tokenHash]
-      );
+      const { rows } = await db.query<Pick<RefreshTokenRow, "id" | "user_id">>(q, [tokenHash]);
       return rows[0] ?? null;
     },
 
-    /** Revoke a single token by plaintext (idempotent). */
     async revoke(plaintextToken: string): Promise<void> {
       const tokenHash = sha256(plaintextToken);
       const q = `UPDATE refresh_tokens SET revoked_at = now() WHERE token_hash = $1 AND revoked_at IS NULL`;
       await db.query(q, [tokenHash]);
     },
 
-    /** Revoke a token by ID (useful when you already have it). */
     async revokeById(id: string): Promise<void> {
       const q = `UPDATE refresh_tokens SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL`;
       await db.query(q, [id]);
     },
 
-    /** Revoke ALL active tokens for a user (logout all devices). */
     async revokeAllForUser(userId: string): Promise<number> {
       const q = `
         UPDATE refresh_tokens
@@ -97,10 +81,9 @@ export function refreshTokenRepository(db: Database) {
       return rowCount ?? 0;
     },
 
-    /** Optional: list tokens for a user (for admin UI or debugging). */
     async listForUser(
       userId: string,
-      opts?: { includeRevoked?: boolean }
+      opts?: { includeRevoked?: boolean },
     ): Promise<RefreshTokenRow[]> {
       const includeRevoked = !!opts?.includeRevoked;
       const q = `
@@ -114,7 +97,6 @@ export function refreshTokenRepository(db: Database) {
       return rows;
     },
 
-    /** Optional: purge expired+revoked tokens to keep table tidy. */
     async purgeStale(): Promise<number> {
       const q = `
         DELETE FROM refresh_tokens
@@ -124,14 +106,7 @@ export function refreshTokenRepository(db: Database) {
       return rowCount ?? 0;
     },
 
-    /**
-     * Optional: enforce max active sessions per user.
-     * Keeps newest N active tokens, revokes older ones.
-     */
-    async enforceMaxActiveForUser(
-      userId: string,
-      keepLatest = 5
-    ): Promise<number> {
+    async enforceMaxActiveForUser(userId: string, keepLatest = 5): Promise<number> {
       const q = `
         WITH ranked AS (
           SELECT id,

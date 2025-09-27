@@ -1,0 +1,230 @@
+@base = http://localhost:3000
+
+@adminEmail = admin@gmail.com
+@adminPass  = ChangeIt1234!
+
+@doctorEmail = dr.house@example.com
+@doctorPass  = VerySecret123!
+
+@patientEmail = john.doe@example.com
+@patientPass  = VerySecret123!
+
+
+### ========================= HEALTH =========================
+# @name health
+GET {{base}}/health
+
+
+### ========================= AUTH =========================
+
+### (Optional) Signup admin (will be 'patient' until promoted externally)
+# @name adminSignup
+POST {{base}}/auth/signup
+Content-Type: application/json
+
+{
+  "username": "Admin",
+  "email": "{{adminEmail}}",
+  "password": "{{adminPass}}",
+  "role": "patient"
+}
+
+### Admin login (assumes seeded admin)
+# @name adminLogin
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPass}}"
+}
+
+### Who am I (admin)
+# @name adminMe
+GET {{base}}/auth/profile
+Authorization: Bearer {{adminLogin.response.body.$.accessToken}}
+
+
+### Signup doctor (starts as patient; will be promoted by admin)
+# @name doctorSignup
+POST {{base}}/auth/signup
+Content-Type: application/json
+
+{
+  "username": "Dr House",
+  "email": "{{doctorEmail}}",
+  "password": "{{doctorPass}}"
+}
+
+### Doctor login (still role=patient for now)
+# @name doctorLogin_initial
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{doctorEmail}}",
+  "password": "{{doctorPass}}"
+}
+
+### Doctor profile (to capture doctorId)
+# @name doctorMe_initial
+GET {{base}}/auth/profile
+Authorization: Bearer {{doctorLogin_initial.response.body.$.accessToken}}
+
+
+### Signup patient
+# @name patientSignup
+POST {{base}}/auth/signup
+Content-Type: application/json
+
+{
+  "username": "John Doe",
+  "email": "{{patientEmail}}",
+  "password": "{{patientPass}}"
+}
+
+### Patient login
+# @name patientLogin
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{patientEmail}}",
+  "password": "{{patientPass}}"
+}
+
+### Who am I (patient)
+# @name patientMe
+GET {{base}}/auth/profile
+Authorization: Bearer {{patientLogin.response.body.$.accessToken}}
+
+
+### ========================= ADMIN: USERS =========================
+
+### List users (for visibility)
+# @name adminListUsers
+GET {{base}}/admin/users?limit=100
+Authorization: Bearer {{adminLogin.response.body.$.accessToken}}
+
+
+### ========================= PUBLIC: SPECIALIZATIONS =========================
+
+### List specializations (we’ll use the first one)
+# @name listSpecs
+GET {{base}}/specializations
+
+
+### ========================= DOCTOR FLOW =========================
+
+### Doctor login again (now role should be doctor)
+# @name doctorLogin
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{doctorEmail}}",
+  "password": "{{doctorPass}}"
+}
+
+### Doctor: my profile (confirm role)
+# @name doctorMe
+GET {{base}}/doctors/me/profile
+Authorization: Bearer {{doctorLogin.response.body.$.accessToken}}
+
+### Doctor: see my specializations (likely empty initially)
+# @name doctorListMySpecs
+GET {{base}}/doctors/me/specializations
+Authorization: Bearer {{doctorLogin.response.body.$.accessToken}}
+
+### Doctor: set my specializations (replace with the first specialization)
+# @name doctorSetSpecs
+PUT {{base}}/doctors/me/specializations
+Authorization: Bearer {{doctorLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "specializationIds": ["{{listSpecs.response.body.$.[0].id}}"]
+}
+
+### Doctor: set weekly availability (replace all)
+# @name doctorWeekly
+PUT {{base}}/doctors/me/weekly-availability
+Authorization: Bearer {{doctorLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "weekday": 1,                       
+      "start_time": "09:00:00",
+      "end_time": "12:00:00",
+      "slot_duration_mins": 30,
+      "timezone": "Europe/Istanbul"
+    },
+    {
+      "weekday": 3,                     
+      "start_time": "14:00:00",
+      "end_time": "17:00:00",
+      "slot_duration_mins": 30,
+      "timezone": "Europe/Istanbul"
+    }
+  ]
+}
+
+### Doctor: add a day-off exception (optional)
+# @name doctorAddException
+POST {{base}}/doctors/me/slot-exceptions
+Authorization: Bearer {{doctorLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "day": "2026-01-15",
+  "full_day": true,
+  "reason": "Conference"
+}
+
+### Doctor: generate availability slots for next 6 weeks (uses first specialization)
+# @name doctorRegenerateSlots
+POST {{base}}/doctors/me/slots/regenerate?weeks=6&specializationId={{listSpecs.response.body.$.[0].id}}
+Authorization: Bearer {{doctorLogin.response.body.$.accessToken}}
+
+### Doctor: see my appointments (should be empty initially)
+# @name doctorApptsEmpty
+GET {{base}}/doctors/me/appointments
+Authorization: Bearer {{doctorLogin.response.body.$.accessToken}}
+
+
+### ========================= PATIENT FLOW =========================
+
+### Patient: search free slots (🔧 set an ISO range within the next 2–6 weeks)
+ @fromIso = 2025-11-01T00:00:00.000Z
+ @toIso   = 2025-11-15T00:00:00.000Z
+# @name patientSearchSlots
+GET {{base}}/patients/me/slots/search?specializationId={{listSpecs.response.body.$.[0].id}}&from={{fromIso}}&to={{toIso}}&limit=20&offset=0
+Authorization: Bearer {{patientLogin.response.body.$.accessToken}}
+
+### Patient: book the first returned slot
+# @name patientBook
+POST {{base}}/patients/me/appointments
+Authorization: Bearer {{patientLogin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "slotId": "{{patientSearchSlots.response.body.$.items[0].id}}",
+  "symptoms": "Chest pain for two days"
+}
+
+### Patient: list my appointments
+# @name patientListAppts
+GET {{base}}/patients/me/appointments
+Authorization: Bearer {{patientLogin.response.body.$.accessToken}}
+
+### Patient: cancel the appointment
+# @name patientCancelAppt
+PATCH {{base}}/patients/me/appointments/{{patientListAppts.response.body.$.[0].id}}/cancel
+Authorization: Bearer {{patientLogin.response.body.$.accessToken}}
+
+### Doctor: see booked schedule now
+# @name doctorApptsAfter
+GET {{base}}/doctors/me/appointments
+Authorization: Bearer {{doctorLogin.response.body.$.accessToken}}

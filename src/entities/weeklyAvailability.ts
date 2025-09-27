@@ -20,9 +20,7 @@ export const weeklyAvailabilitySchema = z
 
 export type WeeklyAvailability = z.infer<typeof weeklyAvailabilitySchema>;
 
-export function mapWeeklyAvailabilityRow(
-  row: WeeklyAvailabilityRow
-): WeeklyAvailability {
+export function mapWeeklyAvailabilityRow(row: WeeklyAvailabilityRow): WeeklyAvailability {
   return {
     id: row.id,
     doctorId: row.doctor_id,
@@ -49,6 +47,4 @@ export const upsertWeeklyAvailabilityDto = z
     path: ["endTime"],
   });
 
-export type UpsertWeeklyAvailabilityDto = z.infer<
-  typeof upsertWeeklyAvailabilityDto
->;
+export type UpsertWeeklyAvailabilityDto = z.infer<typeof upsertWeeklyAvailabilityDto>;

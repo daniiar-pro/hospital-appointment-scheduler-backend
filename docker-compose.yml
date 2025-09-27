@@ -2,7 +2,7 @@ services:
   db:
     image: postgres:17
     environment:
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: Password123
     ports:
       - "5433:5432"
     healthcheck:
@@ -12,5 +12,39 @@ services:
       retries: 20
     volumes:
       - dbdata:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      target: runner
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://postgres:Password123@db:5432/hospital_app
+      JWT_SECRET: super-secret-change-me
+      ACCESS_TTL_SECONDS: "900"
+      REFRESH_TTL_DAYS: "30"
+      ADMIN_EMAIL: admin@gmail.com
+      ADMIN_PASSWORD: ChangeIt1234!
+    ports:
+      - "3000:3000"
+    # the CMD in Dockerfile already runs migrations + seed + api
+
+  reminders:
+    build:
+      context: .
+      target: runner
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://postgres:Password123@db:5432/hospital_app
+      MAIL_MODE: console
+      REMINDER_WINDOW_MINUTES: "5"
+    command: ["node","dist/scheduler/run-reminders-24h.js"]
+
 volumes:
   dbdata: {}

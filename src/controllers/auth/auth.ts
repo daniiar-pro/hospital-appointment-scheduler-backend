@@ -1,10 +1,9 @@
 import { Router } from "express";
 import type { Database } from "../../database";
-import { makeAuthService } from "../../services/auth/service";
-import { authenticate } from "../../middleware/authenticate";
-import { z } from "zod";
+import { makeAuthService } from "../../services/auth/service.js";
+import { authenticate } from "../../middleware/authenticate.js";
 import type { ZodError } from "zod";
-import { signupDto, loginDto } from "../../entities";
+import { signupDto, loginDto } from "../../entities/user.js";
 
 function zodToResponse(err: ZodError) {
   return {
@@ -29,7 +28,7 @@ export function makeAuthRouter(db: Database, jwtSecret: string) {
 
     try {
       const user = await service.signup(parsed.data);
-      return res.status(201).json(user); // { id, username, email, role }
+      return res.status(201).json(user); 
     } catch (e: any) {
       if (e.message === "EMAIL_TAKEN") {
         return res.status(409).json({ error: "Email already in use" });
@@ -63,11 +62,14 @@ export function makeAuthRouter(db: Database, jwtSecret: string) {
 
   router.post("/refresh", async (req, res) => {
     const rt = (req as any).cookies?.refreshToken;
-    if (!rt) return res.status(401).json({ error: "Missing refresh token" });
+    if (!rt) {
+      return res.status(401).json({ error: "Missing refresh token" });
+    }
 
     const result = await service.refresh(rt);
-    if (!result)
+    if (!result) {
       return res.status(401).json({ error: "Invalid/expired refresh token" });
+    }
 
     res.cookie("refreshToken", result.refreshPlain, {
       httpOnly: true,
@@ -85,7 +87,6 @@ export function makeAuthRouter(db: Database, jwtSecret: string) {
     return res.status(204).end("You are logged out");
   });
 
-  // PROFILE (protected)
   router.get("/profile", authenticate(jwtSecret), (req: any, res) => {
     res.json({ id: req.user.id, role: req.user.role });
   });

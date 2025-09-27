@@ -6,7 +6,7 @@
 **/.idea/
 **/.DS_Store
 **/*.log
-
+**/coverage/
 
 # Environment files
 **/.env
