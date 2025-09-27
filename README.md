@@ -1,7 +1,9 @@
-# Hospital Appointment Scheduler – Final README
+# Hospital Appointment Scheduler
 
-This README is the **single source of truth** for running and reviewing the project.  
-It covers **Task-5 (Docker one-command startup), Task-6 (tests 50%+), Task-7 (CI pipeline)**, plus API usage.
+It covers :
+- **Task-5 (Docker one-command startup)**
+- **Task-6 (tests 50%+)**
+- **Task-7 (CI pipeline), plus API usage.**
 
 ---
 
