@@ -169,9 +169,9 @@ CHECK ENDPOINTS (E2E tests (smoke tests) it'll check every endpoint automaticall
 npm run smoke:docker
 ```
 
-  • API will be on http://localhost:3000
-  • DB on host localhost:5433 (container port 5432)
-  • Default seeded admin: admin@gmail.com / ChangeIt1234!
+  - API will be on http://localhost:3000
+  - DB on host localhost:5433 (container port 5432)
+  - Default seeded admin: admin@gmail.com / ChangeIt1234!
 
 Logs:
 
