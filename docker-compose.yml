@@ -41,10 +41,17 @@ services:
         condition: service_started
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgres://postgres:Password123@db:5432/hospital_app
+      DATABASE_URL: postgres://postgres:Password123@db:5433/hospital_app
       MAIL_MODE: console
       REMINDER_WINDOW_MINUTES: "5"
     command: ["node","dist/scheduler/run-reminders-24h.js"]
+
+  qa:
+    build:
+      context: .
+      target: builder   
+    environment:
+      NODE_ENV: test
 
 volumes:
   dbdata: {}

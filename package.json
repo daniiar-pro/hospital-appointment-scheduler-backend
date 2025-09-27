@@ -18,6 +18,11 @@
     "docker:logs": "docker compose logs -f api",
     "docker:down": "docker compose down -v",
 
+    "test:docker": "docker compose run --rm qa npm test -- --runInBand",
+    "coverage:docker": "docker compose run --rm qa npm run coverage",
+    "lint:docker": "docker compose run --rm qa npm run lint",
+    "format:check:docker": "docker compose run --rm qa npm run format:check",
+
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "coverage": "jest --coverage --coverageReporters=text-summary",

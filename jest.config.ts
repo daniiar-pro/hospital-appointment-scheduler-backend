@@ -12,9 +12,12 @@ const config: Config = {
     "^(\\.{1,2}/.*)\\.js$": "$1",
   },
 
+  testPathIgnorePatterns:["<rootDir>/dist/"],
+
   collectCoverage: true,
   collectCoverageFrom: [
     "src/**/*.ts",
+    "src/**/*/app.ts",
     "src/**/*/logger.ts",
     "src/**/*/smoke.ts",
     "!src/**/types.ts",

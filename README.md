@@ -18,8 +18,8 @@ It covers :
 - [Quick Start Docker](#quick-start-docker)
 - [Local Development (no Docker)](#local-development-no-docker)
 - [Database & Migrations](#database--migrations)
-- [Testing & Coverage](#testing--coverage)
-- [Linting & Formatting](#linting--formatting)
+- [Testing & Coverage Docker](#testing--coverage-docker)
+- [Linting & Formatting](#linting--formatting-docker)
 - [CI Pipeline](#ci-pipeline)
 - [Email Reminders (24h before)](#email-reminders-24h-before)
 - [Endpoints](./docs/09-ENDPOINTS.md)
@@ -230,49 +230,38 @@ curl http://localhost:3000/health
 
 ⸻
 
-## Testing & Coverage
+## Testing & Coverage Docker
 
 Run all tests:
 ```
-npm test
+npm run test:docker
 ```
 
 Run with coverage (prints a text summary at the end):
 ```
-npm run coverage
+npm run coverage:docker
 ```
 
-Open HTML coverage report (macOS):
-```
-npm run coverage:open
-```
 
 Status: Overall coverage is 80%+ (controllers/services/repos have broad coverage).
 Unit tests use Jest and Supertest; no DB is required for tests (repositories are tested with fakes/mocks).
 
 ⸻
 
-## Linting & Formatting
+## Linting & Formatting Docker
 
 ### Lint (non-blocking warnings allowed)
 ```
-npm run lint
+npm run lint:docker
 ```
 
-### Auto-fix what can be fixed
-```
-npm run lint:fix
-```
 
 ### Format with Prettier
 ```
-npm run format
+npm run format:check:docker
 ```
 
-### or check only
-```
-npm run format:check
-```
+
 
 ⸻
 

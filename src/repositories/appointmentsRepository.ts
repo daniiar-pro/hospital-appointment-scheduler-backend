@@ -106,3 +106,6 @@ export function appointmentsRepository(db: Database) {
     },
   };
 }
+
+
+//  repositories --> services --> controller (manager, which manges endpoints)
